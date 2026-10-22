@@ -1,6 +1,7 @@
 package com.example.myapplication.navegacao
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,9 +22,12 @@ import com.example.myapplication.viewmodel.LojaViewModel
 @Composable
 fun NavagacaoEntreTela() {
 
+    val contexto = LocalContext.current
     val navInterno = rememberNavController()
 
-    val viewModel: LojaViewModel = viewModel()
+    val viewModel: LojaViewModel = viewModel() {
+        LojaViewModel(contexto)
+    }
 
     val navInicio = { navInterno.navigate(Rotas.HOME) }
     val navCarrinho = { navInterno.navigate(Rotas.CARRINHO) }

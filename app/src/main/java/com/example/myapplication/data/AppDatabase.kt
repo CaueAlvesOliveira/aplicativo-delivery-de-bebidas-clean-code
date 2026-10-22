@@ -1,6 +1,7 @@
 package com.example.myapplication.data
 
 import android.content.Context
+import androidx.room3.ColumnTypeConverters
 import androidx.room3.Database
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
@@ -9,8 +10,8 @@ import com.example.myapplication.data.dao.ProdutoDAO
 import com.example.myapplication.model.Categoria
 import com.example.myapplication.model.Produto
 
-
 @Database(entities = [Categoria::class, Produto::class], version = 1)
+@ColumnTypeConverters(Conversores::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun produtoDAO(): ProdutoDAO
     abstract fun categoriaDAO(): CategoriaDAO

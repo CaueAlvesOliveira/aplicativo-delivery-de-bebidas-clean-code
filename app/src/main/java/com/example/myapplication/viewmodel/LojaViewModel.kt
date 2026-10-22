@@ -1,5 +1,7 @@
 package com.example.myapplication.viewmodel
 
+import android.content.Context
+import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AcUnit
 import androidx.compose.material.icons.outlined.Liquor
@@ -10,48 +12,92 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.myapplication.R
+import com.example.myapplication.data.AppDatabase
+import com.example.myapplication.data.LojaRepository
 import com.example.myapplication.model.Categoria
 import com.example.myapplication.model.DadosFormProduto
 import com.example.myapplication.model.ErrosFormProduto
 import com.example.myapplication.model.ItemCarrinho
 import com.example.myapplication.model.Produto
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
-class LojaViewModel : ViewModel() {
+class LojaViewModel(contexto: Context) : ViewModel() {
 
-    private var proximoIdProduto = 1
-    private var proximoIdCategoria = 1
+    private val repository = LojaRepository(AppDatabase.getDatabase(contexto))
 
     val produtos = mutableStateListOf<Produto>()
 
     val categorias = mutableStateListOf<Categoria>()
-
     val carrinho = mutableStateListOf<ItemCarrinho>()
 
     init {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                popularBancoSeVazio()
+                carregarDoBanco()
+            }
+        }
+    }
 
-        adicionarCategoria("Cerveja", Icons.Outlined.SportsBar, Color(0xFF29B6F6))
-        adicionarCategoria("Vinho", Icons.Outlined.WineBar, Color(0xFF7E57C2))
-        adicionarCategoria("Destilada", Icons.Outlined.Liquor, Color(0xFFFF7043))
-        adicionarCategoria("Gelo", Icons.Outlined.AcUnit, Color(0xFF66BB6A))
-        adicionarCategoria("Refrigerante", Icons.Outlined.LocalDrink, Color(0xFF8D6E63))
+    private suspend fun popularBancoSeVazio() {
+        try {
+            if (repository.buscarCategorias().isNotEmpty()) return
 
-        val cerveja = idDaCategoria("Cerveja")
-        val vinho = idDaCategoria("Vinho")
-        val destilada = idDaCategoria("Destilada")
-        val refrigerante = idDaCategoria("Refrigerante")
+            repository.inserirCategoria(Categoria(nome = "Cerveja", icone = Icons.Outlined.SportsBar, cor = Color(0xFF29B6F6)))
+            repository.inserirCategoria(Categoria(nome = "Vinho", icone = Icons.Outlined.WineBar, cor = Color(0xFF7E57C2)))
+            repository.inserirCategoria(Categoria(nome = "Destilada", icone = Icons.Outlined.Liquor, cor = Color(0xFFFF7043)))
+            repository.inserirCategoria(Categoria(nome = "Gelo", icone = Icons.Outlined.AcUnit, cor = Color(0xFF66BB6A)))
+            repository.inserirCategoria(Categoria(nome = "Refrigerante", icone = Icons.Outlined.LocalDrink, cor = Color(0xFF8D6E63)))
 
-        adicionarProduto("Puro Malte", "350ml", "Cervejaria Noturna", 4.90, R.drawable.puro_malte, "Lager leve e refrescante, com final seco e pouco amargor. Ideal pra abrir a noite.", cerveja)
-        adicionarProduto("Vinho Tinto", "750ml", "Adega Vale Rubi", 32.90, R.drawable.vinho, "Tinto seco de corpo médio, com aroma de frutas vermelhas e taninos macios. Combina com massas e carnes.", vinho)
-        adicionarProduto("Energético", "2L", "Distribuidora Vo", 22.90, R.drawable.energetico, "Energético gelado de sabor intenso e cítrico, em garrafa de 2L. Rende para a galera toda.", refrigerante)
-        adicionarProduto("Cerveja Long Neck", "355ml", "Boteco Gelada", 7.90, R.drawable.cerveja, "Pilsen leve em long neck, sempre gelada. Boa pedida pro churrasco e pro fim de tarde.", cerveja)
-        adicionarProduto("Whisky", "1L", "Casa Highland", 89.90, R.drawable.whisky, "Blend suave com notas de baunilha e madeira. Para tomar puro, com gelo ou em drinks.", destilada)
+            val categoriasSalvas = repository.buscarCategorias()
+            fun idDaCategoria(nome: String): Int = categoriasSalvas.first { it.nome == nome }.id
 
-        adicionarProduto("Vodka", "1L", "Distribuidora Polar", 45.90, R.drawable.vodka, "20", "Destilado cristalino de sabor limpo. Base perfeita para drinks e caipiroskas.", destilada)
-        adicionarProduto("Gin", "750ml", "Botânico Gin Club", 79.90, R.drawable.gin, "10", "Notas de zimbro com toques cítricos e botânicos. Combina com tônica gelada e uma rodela de limão.", destilada)
-        adicionarProduto("Cachaça", "700ml", "Alambique Serra Dourada", 24.90, R.drawable.cachaca, "30", "Cachaça de sabor suave e toque adocicado de madeira. Ótima pura ou na caipirinha.", destilada)
-        adicionarProduto("Coca Cola", "2L", "Mercearia Dois Irmãos", 9.90, R.drawable.refrigerante, "35", "Refrigerante sabor cola, bem gelado e com gás. Perfeito para acompanhar pizza ou lanche.", refrigerante)
+            val cerveja = idDaCategoria("Cerveja")
+            val vinho = idDaCategoria("Vinho")
+            val destilada = idDaCategoria("Destilada")
+            val refrigerante = idDaCategoria("Refrigerante")
+
+            repository.inserirProduto(Produto(0, "Puro Malte", "350ml", "Cervejaria Noturna", 4.90, R.drawable.puro_malte, null, "Lager leve e refrescante, com final seco e pouco amargor. Ideal pra abrir a noite.", cerveja))
+            repository.inserirProduto(Produto(0, "Vinho Tinto", "750ml", "Adega Vale Rubi", 32.90, R.drawable.vinho, null, "Tinto seco de corpo médio, com aroma de frutas vermelhas e taninos macios. Combina com massas e carnes.", vinho))
+            repository.inserirProduto(Produto(0, "Energético", "2L", "Distribuidora Vo", 22.90, R.drawable.energetico, null, "Energético gelado de sabor intenso e cítrico, em garrafa de 2L. Rende para a galera toda.", refrigerante))
+            repository.inserirProduto(Produto(0, "Cerveja Long Neck", "355ml", "Boteco Gelada", 7.90, R.drawable.cerveja, null, "Pilsen leve em long neck, sempre gelada. Boa pedida pro churrasco e pro fim de tarde.", cerveja))
+            repository.inserirProduto(Produto(0, "Whisky", "1L", "Casa Highland", 89.90, R.drawable.whisky, null, "Blend suave com notas de baunilha e madeira. Para tomar puro, com gelo ou em drinks.", destilada))
+            repository.inserirProduto(Produto(0, "Vodka", "1L", "Distribuidora Polar", 45.90, R.drawable.vodka, "20", "Destilado cristalino de sabor limpo. Base perfeita para drinks e caipiroskas.", destilada))
+            repository.inserirProduto(Produto(0, "Gin", "750ml", "Botânico Gin Club", 79.90, R.drawable.gin, "10", "Notas de zimbro com toques cítricos e botânicos. Combina com tônica gelada e uma rodela de limão.", destilada))
+            repository.inserirProduto(Produto(0, "Cachaça", "700ml", "Alambique Serra Dourada", 24.90, R.drawable.cachaca, "30", "Cachaça de sabor suave e toque adocicado de madeira. Ótima pura ou na caipirinha.", destilada))
+            repository.inserirProduto(Produto(0, "Coca Cola", "2L", "Mercearia Dois Irmãos", 9.90, R.drawable.refrigerante, "35", "Refrigerante sabor cola, bem gelado e com gás. Perfeito para acompanhar pizza ou lanche.", refrigerante))
+        } catch (e: Exception) {
+            Log.e("Erro ao popular", "Msg: ${e.message}")
+        }
+    }
+
+    private suspend fun carregarDoBanco() {
+        try {
+            categorias.clear()
+            categorias.addAll(repository.buscarCategorias())
+            produtos.clear()
+            produtos.addAll(repository.buscarProdutos())
+        } catch (e: Exception) {
+            Log.e("LojaViewModel", "Erro ao carregar: ${e.message}")
+        }
+    }
+
+    private fun executarEAtualizar(acao:suspend() -> Unit) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    acao()
+                } catch (e: Exception) {
+                    Log.e("LojaViewModel", "Erro ao salvar: ${e.message}")
+                }
+                carregarDoBanco()
+            }
+        }
     }
 
     private fun converterPreco(texto: String): Double? {
@@ -137,7 +183,11 @@ class LojaViewModel : ViewModel() {
         desconto: String,
         descricao: String,
         categoriaId: Int) {
-        produtos.add(Produto(gerarIdDoProduto(), nome, volume, estabelecimento, preco, imagem, desconto, descricao, categoriaId))
+        executarEAtualizar {
+            repository.inserirProduto(
+                Produto(0, nome, volume, estabelecimento, preco, imagem, desconto, descricao, categoriaId)
+            )
+        }
     }
 
     fun adicionarProduto(
@@ -148,12 +198,16 @@ class LojaViewModel : ViewModel() {
         imagem: Int,
         descricao: String,
         categoriaId: Int) {
-        produtos.add(Produto(gerarIdDoProduto(), nome, volume, estabelecimento, preco, imagem, null, descricao, categoriaId))
+        executarEAtualizar {
+            repository.inserirProduto(
+                Produto(0, nome, volume, estabelecimento, preco, imagem, null, descricao, categoriaId)
+            )
+        }
     }
 
     fun removerProduto(id: Int) {
-        produtos.removeAll { it.id == id }
         carrinho.removeAll { it.produtoId == id }
+        executarEAtualizar { repository.deletarProduto(id) }
     }
 
     fun editarProduto(
@@ -166,17 +220,11 @@ class LojaViewModel : ViewModel() {
         desconto: String?,
         descricao: String,
         categoriaId: Int) {
-        val i = produtos.indexOfFirst { it.id == id }
-        if (i != -1) produtos[i] = produtos[i].copy(
-            nome = nome,
-            volume = volume,
-            estabelecimento = estabelecimento,
-            preco = preco,
-            imagem = imagem,
-            desconto = desconto,
-            descricao = descricao,
-            categoriaId = categoriaId
-        )
+        executarEAtualizar {
+            repository.atualizarProduto(
+                Produto(id, nome, volume, estabelecimento, preco, imagem, desconto, descricao, categoriaId)
+            )
+        }
     }
 
     fun buscarProduto(id: Int): Produto? {
@@ -184,23 +232,21 @@ class LojaViewModel : ViewModel() {
     }
 
     fun adicionarCategoria(nome: String, icone: ImageVector, cor: Color) {
-        categorias.add(Categoria(gerarIdDaCategoria(), nome, icone, cor))
+        executarEAtualizar {
+            repository.inserirCategoria(Categoria(0, nome, icone, cor))
+        }
     }
 
     fun removerCategoria(id: Int) {
-
         val idsRemovidos = produtos.filter { it.categoriaId == id }.map { it.id }.toSet()
-
-        categorias.removeAll { it.id == id }
-        produtos.removeAll { it.categoriaId == id }
         carrinho.removeAll { it.produtoId in idsRemovidos }
+        executarEAtualizar { repository.deletarCategoria(id) }
     }
 
     fun editarCategoria(id: Int, nome: String, icone: ImageVector, cor: Color) {
-        val i = categorias.indexOfFirst { it.id == id }
-        if (i != -1) categorias[i] = categorias[i].copy(
-            nome = nome, icone = icone, cor = cor
-        )
+        executarEAtualizar {
+            repository.atualizarCategoria(Categoria(id, nome, icone, cor))
+        }
     }
 
     fun buscarCategoria(id: Int): Categoria? {
@@ -233,18 +279,6 @@ class LojaViewModel : ViewModel() {
             subTotal += it.quantidade * preco
         }
         return subTotal
-    }
-
-    private fun gerarIdDoProduto(): Int {
-        return proximoIdProduto++
-    }
-
-    private fun gerarIdDaCategoria(): Int {
-        return proximoIdCategoria++
-    }
-
-    private fun idDaCategoria(nome: String): Int {
-        return categorias.first { it.nome == nome }.id
     }
 
     fun calculaQuantidadeItensComprados(): Int {
