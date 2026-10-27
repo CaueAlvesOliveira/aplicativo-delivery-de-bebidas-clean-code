@@ -26,6 +26,10 @@ class LojaRepository(db: AppDatabase) {
         produtoDAO.deletarPorId(id)
     }
 
+    suspend fun buscarProdutoPorId(id: Int): Produto? {
+        return produtoDAO.buscarProdutoPorId(id)
+    }
+
     suspend fun buscarCategorias(): List<Categoria> {
         return categoriaDAO.buscarCategorias()
     }

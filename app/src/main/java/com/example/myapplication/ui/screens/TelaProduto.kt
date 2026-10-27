@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -69,15 +70,28 @@ fun TelaProduto(
     onPedidos: () -> Unit = {},
     onProdutos: () -> Unit = {}
 ) {
-    val produto = viewModel.buscarProduto(produtoId)
+    var produto by remember { mutableStateOf<Produto?>(null) }
+    var carregou by remember { mutableStateOf(false) }
+    var quantidade by rememberSaveable { mutableIntStateOf(1) }
+    val contexto = LocalContext.current
 
-    if (produto == null) {
-        LaunchedEffect(Unit) { onVoltar() }
+    LaunchedEffect(produtoId) {
+        produto = viewModel.buscarProdutoPorIdNoBanco(produtoId)
+        carregou = true
+    }
+
+    if (!carregou) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
         return
     }
 
-    var quantidade by rememberSaveable { mutableIntStateOf(1) }
-    val contexto = LocalContext.current
+    val produtoAtual = produto
+    if (produtoAtual == null) {
+        LaunchedEffect(Unit) { onVoltar() }
+        return
+    }
 
     Scaffold(
         bottomBar = {
@@ -108,9 +122,9 @@ fun TelaProduto(
                 }
 
                 Spacer(Modifier.height(16.dp))
-                ImagemProduto(produto)
+                ImagemProduto(produtoAtual)
                 Spacer(Modifier.height(20.dp))
-                InformacoesProduto(produto)
+                InformacoesProduto(produtoAtual)
                 Spacer(Modifier.height(20.dp))
 
                 SeletorQuantidade(
@@ -121,10 +135,10 @@ fun TelaProduto(
                 Spacer(Modifier.weight(1f))
 
                 RodapeCompra(
-                    produto = produto,
+                    produto = produtoAtual,
                     quantidade = quantidade,
                     onAdicionar = {
-                        viewModel.adicionarAoCarrinho(produto.id, quantidade)
+                        viewModel.adicionarAoCarrinho(produtoAtual.id, quantidade)
                         Toast.makeText(contexto, "Produto adicionado ao carrinho", Toast.LENGTH_SHORT).show()
                         irParaCarrinho()
                     }

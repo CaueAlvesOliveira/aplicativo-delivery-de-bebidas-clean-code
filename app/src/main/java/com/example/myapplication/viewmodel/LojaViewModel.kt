@@ -231,6 +231,17 @@ class LojaViewModel(contexto: Context) : ViewModel() {
         return produtos.find { it.id == id }
     }
 
+    suspend fun buscarProdutoPorIdNoBanco(id: Int): Produto? {
+        return withContext(Dispatchers.IO) {
+            try {
+                repository.buscarProdutoPorId(id)
+            } catch (e: Exception) {
+                Log.e("LojaViewModel", "Erro ao buscar produto: ${e.message}")
+                null
+            }
+        }
+    }
+
     fun adicionarCategoria(nome: String, icone: ImageVector, cor: Color) {
         executarEAtualizar {
             repository.inserirCategoria(Categoria(0, nome, icone, cor))
