@@ -10,20 +10,20 @@ import com.example.myapplication.model.Categoria
 @Dao
 interface CategoriaDAO {
     @Insert
-    fun inserir(categoria: Categoria)
+    suspend fun inserir(categoria: Categoria)
 
     @Update
-    fun atualizar(categoria: Categoria)
+    suspend fun atualizar(categoria: Categoria)
 
     @Delete
-    fun deletar(categoria: Categoria)
+    suspend fun deletar(categoria: Categoria)
 
     @Query("DELETE FROM categorias WHERE id = :id")
-    fun deletarPorId(id: Int)
+    suspend fun deletarPorId(id: Int)
 
     @Query("SELECT * FROM categorias")
-    fun buscarCategorias(): List<Categoria>
+    suspend fun buscarCategorias(): List<Categoria>
 
     @Query("SELECT * FROM categorias WHERE id = :id")
-    fun buscarCategoriaPorId(id: Int): Categoria?
+    suspend fun buscarCategoriaPorId(id: Int): Categoria?
 }

@@ -121,7 +121,7 @@ fun TelaListaCategorias(
             nomeCategoria = categoria.nome,
             quantidadeProdutos = viewModel.produtos.count { it.categoriaId == categoria.id },
             onConfirmar = {
-                viewModel.removerCategoria(categoria.id)
+                viewModel.removerCategoria(categoria)
                 categoriaParaExcluir = null
             },
             onCancelar = { categoriaParaExcluir = null }

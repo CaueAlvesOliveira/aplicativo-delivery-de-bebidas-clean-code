@@ -22,8 +22,8 @@ class LojaRepository(db: AppDatabase) {
         produtoDAO.atualizar(produto)
     }
 
-    suspend fun deletarProduto(id: Int) {
-        produtoDAO.deletarPorId(id)
+    suspend fun deletarProduto(produto: Produto) {
+        produtoDAO.deletar(produto)
     }
 
     suspend fun buscarProdutoPorId(id: Int): Produto? {
@@ -42,8 +42,8 @@ class LojaRepository(db: AppDatabase) {
         categoriaDAO.atualizar(categoria)
     }
 
-    suspend fun deletarCategoria(id: Int) {
-        produtoDAO.deletarPorCategoria(id)
-        categoriaDAO.deletarPorId(id)
+    suspend fun deletarCategoria(categoria: Categoria) {
+        produtoDAO.deletarPorCategoria(categoria.id)
+        categoriaDAO.deletar(categoria)
     }
 }

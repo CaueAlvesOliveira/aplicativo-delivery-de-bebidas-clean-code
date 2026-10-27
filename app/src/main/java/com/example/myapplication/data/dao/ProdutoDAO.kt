@@ -10,26 +10,26 @@ import com.example.myapplication.model.Produto
 @Dao
 interface ProdutoDAO {
     @Insert
-    fun inserir(produto: Produto)
+    suspend fun inserir(produto: Produto)
 
     @Update
-    fun atualizar(produto: Produto)
+    suspend fun atualizar(produto: Produto)
 
     @Delete
-    fun deletar(produto: Produto)
+    suspend fun deletar(produto: Produto)
 
     @Query("DELETE FROM produtos WHERE id = :id")
-    fun deletarPorId(id: Int)
+    suspend fun deletarPorId(id: Int)
 
     @Query("DELETE FROM produtos WHERE categoriaId = :categoriaId")
-    fun deletarPorCategoria(categoriaId: Int)
+    suspend fun deletarPorCategoria(categoriaId: Int)
 
     @Query("SELECT * FROM produtos")
-    fun buscarProdutos(): List<Produto>
+    suspend fun buscarProdutos(): List<Produto>
 
     @Query("SELECT * FROM produtos WHERE id = :id")
-    fun buscarProdutoPorId(id: Int): Produto?
+    suspend fun buscarProdutoPorId(id: Int): Produto?
 
     @Query("SELECT * FROM produtos WHERE categoriaId = :categoriaId")
-    fun buscarProdutosPorCategoria(categoriaId: Int): List<Produto>
+    suspend fun buscarProdutosPorCategoria(categoriaId: Int): List<Produto>
 }

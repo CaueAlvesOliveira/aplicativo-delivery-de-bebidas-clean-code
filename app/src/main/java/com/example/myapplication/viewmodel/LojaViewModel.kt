@@ -205,9 +205,9 @@ class LojaViewModel(contexto: Context) : ViewModel() {
         }
     }
 
-    fun removerProduto(id: Int) {
-        carrinho.removeAll { it.produtoId == id }
-        executarEAtualizar { repository.deletarProduto(id) }
+    fun removerProduto(produto: Produto) {
+        carrinho.removeAll { it.produtoId == produto.id }
+        executarEAtualizar { repository.deletarProduto(produto) }
     }
 
     fun editarProduto(
@@ -248,10 +248,10 @@ class LojaViewModel(contexto: Context) : ViewModel() {
         }
     }
 
-    fun removerCategoria(id: Int) {
-        val idsRemovidos = produtos.filter { it.categoriaId == id }.map { it.id }.toSet()
+    fun removerCategoria(categoria: Categoria) {
+        val idsRemovidos = produtos.filter { it.categoriaId == categoria.id }.map { it.id }.toSet()
         carrinho.removeAll { it.produtoId in idsRemovidos }
-        executarEAtualizar { repository.deletarCategoria(id) }
+        executarEAtualizar { repository.deletarCategoria(categoria) }
     }
 
     fun editarCategoria(id: Int, nome: String, icone: ImageVector, cor: Color) {

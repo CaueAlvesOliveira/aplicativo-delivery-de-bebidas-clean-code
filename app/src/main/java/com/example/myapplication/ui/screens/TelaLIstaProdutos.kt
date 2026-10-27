@@ -121,7 +121,7 @@ fun TelaListaProdutos(
         DialogExcluirProduto(
             nomeProduto = produto.nome,
             onConfirmar = {
-                viewModel.removerProduto(produto.id)
+                viewModel.removerProduto(produto)
                 produtoParaExcluir = null
             },
             onCancelar = { produtoParaExcluir = null }
