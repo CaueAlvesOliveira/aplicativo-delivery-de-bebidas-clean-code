@@ -79,10 +79,14 @@ class LojaViewModel(contexto: Context) : ViewModel() {
 
     private suspend fun carregarDoBanco() {
         try {
-            categorias.clear()
-            categorias.addAll(repository.buscarCategorias())
-            produtos.clear()
-            produtos.addAll(repository.buscarProdutos())
+            val listaCategorias = repository.buscarCategorias()
+            val listaProdutos = repository.buscarProdutos()
+            withContext(Dispatchers.Main) {
+                categorias.clear()
+                categorias.addAll(listaCategorias)
+                produtos.clear()
+                produtos.addAll(listaProdutos)
+            }
         } catch (e: Exception) {
             Log.e("LojaViewModel", "Erro ao carregar: ${e.message}")
         }
@@ -91,8 +95,10 @@ class LojaViewModel(contexto: Context) : ViewModel() {
     private suspend fun carregarCarrinho() {
         try {
             val itens = repository.buscarCarrinho()
-            carrinho.clear()
-            carrinho.addAll(itens)
+            withContext(Dispatchers.Main) {
+                carrinho.clear()
+                carrinho.addAll(itens)
+            }
         } catch (e: Exception) {
             Log.e("LojaViewModel", "Erro ao carregar carrinho: ${e.message}")
         }
