@@ -34,6 +34,10 @@ class LojaRepository(db: AppDatabase) {
         return categoriaDAO.buscarCategorias()
     }
 
+    suspend fun buscarCategoriaPorId(id: Int): Categoria? {
+        return categoriaDAO.buscarCategoriaPorId(id)
+    }
+
     suspend fun inserirCategoria(categoria: Categoria) {
         categoriaDAO.inserir(categoria)
     }

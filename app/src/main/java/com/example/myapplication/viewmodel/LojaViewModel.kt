@@ -264,6 +264,17 @@ class LojaViewModel(contexto: Context) : ViewModel() {
         return categorias.find { it.id == id }
     }
 
+    suspend fun buscarCategoriaPorIdNoBanco(id: Int): Categoria? {
+        return withContext(Dispatchers.IO) {
+            try {
+                repository.buscarCategoriaPorId(id)
+            } catch (e: Exception) {
+                Log.e("LojaViewModel", "Erro ao buscar categoria: ${e.message}")
+                null
+            }
+        }
+    }
+
     fun adicionarAoCarrinho(produtoId: Int, quantidade: Int = 1) {
         val i = carrinho.indexOfFirst { it.produtoId == produtoId }
         if (i == -1) {
