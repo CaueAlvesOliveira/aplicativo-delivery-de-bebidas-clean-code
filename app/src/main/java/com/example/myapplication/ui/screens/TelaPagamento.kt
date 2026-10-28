@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.myapplication.navegacao.rotas.Rotas
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
@@ -83,7 +84,12 @@ fun TelaPagamento(
             CardsModeloPagamento()
             CardResumo(viewModel)
             Spacer(modifier = Modifier.height(16.dp))
-            BotaoConfirmarPagamento(navController)
+            BotaoConfirmarPagamento(
+                onConfirmar = {
+                    viewModel.limparCarrinho()
+                    navController.navigate(Rotas.RASTREIO)
+                }
+            )
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -231,7 +237,7 @@ fun CardResumo(viewModel: LojaViewModel){
 }
 
 @Composable
-fun BotaoConfirmarPagamento(navController: NavController){
+fun BotaoConfirmarPagamento(onConfirmar: () -> Unit){
 
     Column(
         modifier = Modifier.padding(16.dp, 15.dp),
@@ -239,13 +245,7 @@ fun BotaoConfirmarPagamento(navController: NavController){
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Button(
-            onClick = {
-                try {
-                    navController.navigate(Rotas.RASTREIO)
-                } catch (_: Exception) {
-                    throw Exception("Erro ao navegar para a tela de rastreio")
-                }
-            },
+            onClick = onConfirmar,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(255, 112, 67, 255)
             ),

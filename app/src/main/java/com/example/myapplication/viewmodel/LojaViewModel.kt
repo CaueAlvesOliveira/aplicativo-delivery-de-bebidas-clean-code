@@ -40,6 +40,7 @@ class LojaViewModel(contexto: Context) : ViewModel() {
             withContext(Dispatchers.IO) {
                 popularBancoSeVazio()
                 carregarDoBanco()
+                carregarCarrinho()
             }
         }
     }
@@ -87,6 +88,16 @@ class LojaViewModel(contexto: Context) : ViewModel() {
         }
     }
 
+    private suspend fun carregarCarrinho() {
+        try {
+            val itens = repository.buscarCarrinho()
+            carrinho.clear()
+            carrinho.addAll(itens)
+        } catch (e: Exception) {
+            Log.e("LojaViewModel", "Erro ao carregar carrinho: ${e.message}")
+        }
+    }
+
     private fun executarEAtualizar(acao:suspend() -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
@@ -96,6 +107,18 @@ class LojaViewModel(contexto: Context) : ViewModel() {
                     Log.e("LojaViewModel", "Erro ao salvar: ${e.message}")
                 }
                 carregarDoBanco()
+            }
+        }
+    }
+
+    private fun persistirCarrinho(acao: suspend () -> Unit) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    acao()
+                } catch (e: Exception) {
+                    Log.e("LojaViewModel", "Erro no carrinho: ${e.message}")
+                }
             }
         }
     }
@@ -277,21 +300,39 @@ class LojaViewModel(contexto: Context) : ViewModel() {
 
     fun adicionarAoCarrinho(produtoId: Int, quantidade: Int = 1) {
         val i = carrinho.indexOfFirst { it.produtoId == produtoId }
-        if (i == -1) {
-            carrinho.add(ItemCarrinho(produtoId, quantidade))
+        val novo = if (i == -1) {
+            ItemCarrinho(produtoId, quantidade)
         } else {
-            carrinho[i] = carrinho[i].copy(quantidade = carrinho[i].quantidade + quantidade)
+            carrinho[i].copy(quantidade = carrinho[i].quantidade + quantidade)
         }
+        if (i == -1) {
+            carrinho.add(novo)
+        } else {
+            carrinho[i] = novo
+        }
+        persistirCarrinho { repository.salvarItemCarrinho(novo) }
     }
 
     fun alterarQuantidadeNoCarrinho(produtoId: Int, quantidade: Int) {
-        if (quantidade <= 0) { removerDoCarrinho(produtoId); return }
+        if (quantidade <= 0) {
+            removerDoCarrinho(produtoId); return
+        }
         val i = carrinho.indexOfFirst { it.produtoId == produtoId }
-        if (i != -1) carrinho[i] = carrinho[i].copy(quantidade = quantidade)
+        if (i != -1) {
+            val novo = carrinho[i].copy(quantidade = quantidade)
+            carrinho[i] = novo
+            persistirCarrinho { repository.salvarItemCarrinho(novo) }
+        }
     }
 
     fun removerDoCarrinho(produtoId: Int) {
         carrinho.removeAll { it.produtoId == produtoId }
+        persistirCarrinho { repository.removerItemCarrinho(produtoId) }
+    }
+
+    fun limparCarrinho() {
+        carrinho.clear()
+        persistirCarrinho { repository.limparCarrinho() }
     }
 
     fun subtotalCarrinho(): Double {

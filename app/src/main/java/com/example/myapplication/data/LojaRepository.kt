@@ -1,14 +1,17 @@
 package com.example.myapplication.data
 
+import com.example.myapplication.data.dao.CarrinhoDAO
 import com.example.myapplication.data.dao.CategoriaDAO
 import com.example.myapplication.data.dao.ProdutoDAO
 import com.example.myapplication.model.Categoria
+import com.example.myapplication.model.ItemCarrinho
 import com.example.myapplication.model.Produto
 
 class LojaRepository(db: AppDatabase) {
 
     private val produtoDAO: ProdutoDAO = db.produtoDAO()
     private val categoriaDAO: CategoriaDAO = db.categoriaDAO()
+    private val carrinhoDAO: CarrinhoDAO = db.carrinhoDAO()
 
     suspend fun buscarProdutos(): List<Produto> {
         return produtoDAO.buscarProdutos()
@@ -49,5 +52,19 @@ class LojaRepository(db: AppDatabase) {
     suspend fun deletarCategoria(categoria: Categoria) {
         produtoDAO.deletarPorCategoria(categoria.id)
         categoriaDAO.deletar(categoria)
+    }
+
+    suspend fun buscarCarrinho(): List<ItemCarrinho> = carrinhoDAO.buscarItens()
+
+    suspend fun salvarItemCarrinho(item: ItemCarrinho) {
+        carrinhoDAO.salvar(item)
+    }
+
+    suspend fun removerItemCarrinho(produtoId: Int) {
+        carrinhoDAO.deletarPorProduto(produtoId)
+    }
+
+    suspend fun limparCarrinho() {
+        carrinhoDAO.limpar()
     }
 }
