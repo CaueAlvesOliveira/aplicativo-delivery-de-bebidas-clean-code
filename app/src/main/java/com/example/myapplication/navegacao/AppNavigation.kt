@@ -7,16 +7,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.navegacao.rotas.Rotas
-import com.example.myapplication.ui.screens.TelaCarrinho
-import com.example.myapplication.ui.screens.TelaFormCategoria
-import com.example.myapplication.ui.screens.TelaFormProduto
-import com.example.myapplication.ui.screens.TelaListaCategorias
-import com.example.myapplication.ui.screens.TelaListaProdutos
-import com.example.myapplication.ui.screens.TelaPagamento
-import com.example.myapplication.ui.screens.TelaProduto
-import com.example.myapplication.ui.screens.TelaProdutoPorCategoria
-import com.example.myapplication.ui.screens.TelaRastreio
-import com.example.myapplication.ui.screens.telaInicio
+import com.example.myapplication.ui.screens.telaDoCarrinho.TelaCarrinho
+import com.example.myapplication.ui.screens.telaFormDeCategoria.TelaFormCategoria
+import com.example.myapplication.ui.screens.telaFormDeProduto.TelaFormProduto
+import com.example.myapplication.ui.screens.telaListaDeCategorias.TelaListaCategorias
+import com.example.myapplication.ui.screens.telaListaDeProdutos.TelaListaProdutos
+import com.example.myapplication.ui.screens.telaDePagemento.TelaPagamento
+import com.example.myapplication.ui.screens.telaDeProduto.TelaProduto
+import com.example.myapplication.ui.screens.telaDeProdutosPorCategoria.TelaProdutoPorCategoria
+import com.example.myapplication.ui.screens.telaDeRastreio.TelaRastreio
+import com.example.myapplication.ui.screens.telaDeInicio.telaInicio
 import com.example.myapplication.viewmodel.LojaViewModel
 
 @Composable

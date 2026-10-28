@@ -1,9 +1,9 @@
-package com.example.myapplication.data.dao
+package com.example.myapplication.data.local.dao
 
 import androidx.room3.Dao
 import androidx.room3.Query
 import androidx.room3.Upsert
-import com.example.myapplication.model.ItemCarrinho
+import com.example.myapplication.data.local.entity.ItemCarrinho
 
 
 @Dao

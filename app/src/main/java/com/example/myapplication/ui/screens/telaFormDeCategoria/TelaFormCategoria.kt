@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens
+package com.example.myapplication.ui.screens.telaFormDeCategoria
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,9 +44,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.model.Categoria
+import com.example.myapplication.data.local.entity.Categoria
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.TopBarTela
+import com.example.myapplication.ui.screens.telaDeInicio.ItemCategoria
 import com.example.myapplication.viewmodel.LojaViewModel
 
 private val ICONES_DISPONIVEIS = listOf(

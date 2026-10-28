@@ -1,11 +1,12 @@
-package com.example.myapplication.data
+package com.example.myapplication.data.repository
 
-import com.example.myapplication.data.dao.CarrinhoDAO
-import com.example.myapplication.data.dao.CategoriaDAO
-import com.example.myapplication.data.dao.ProdutoDAO
-import com.example.myapplication.model.Categoria
-import com.example.myapplication.model.ItemCarrinho
-import com.example.myapplication.model.Produto
+import com.example.myapplication.data.local.dao.CarrinhoDAO
+import com.example.myapplication.data.local.dao.CategoriaDAO
+import com.example.myapplication.data.local.dao.ProdutoDAO
+import com.example.myapplication.data.local.database.AppDatabase
+import com.example.myapplication.data.local.entity.Categoria
+import com.example.myapplication.data.local.entity.ItemCarrinho
+import com.example.myapplication.data.local.entity.Produto
 
 class LojaRepository(db: AppDatabase) {
 

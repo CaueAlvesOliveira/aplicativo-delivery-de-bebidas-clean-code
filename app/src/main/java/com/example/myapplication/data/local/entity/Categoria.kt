@@ -1,4 +1,4 @@
-package com.example.myapplication.model
+package com.example.myapplication.data.local.entity
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector

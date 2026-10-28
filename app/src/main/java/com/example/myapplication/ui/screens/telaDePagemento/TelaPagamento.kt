@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens
+package com.example.myapplication.ui.screens.telaDePagemento
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.myapplication.navegacao.rotas.Rotas
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior

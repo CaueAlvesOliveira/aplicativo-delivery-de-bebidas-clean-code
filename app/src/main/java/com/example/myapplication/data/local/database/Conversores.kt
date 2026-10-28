@@ -1,4 +1,4 @@
-package com.example.myapplication.data
+package com.example.myapplication.data.local.database
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AcUnit
