@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CarrinhoDAO {
-
     @Upsert
     suspend fun salvar(item: ItemCarrinho)
     @Query("DELETE FROM carrinho WHERE produtoId = :produtoId")
@@ -18,5 +17,8 @@ interface CarrinhoDAO {
     suspend fun limpar()
 
     @Query("SELECT * FROM carrinho")
-    suspend fun buscarTodos(): Flow<List<ItemCarrinho>>
+    fun buscarTodos(): Flow<List<ItemCarrinho>>
+
+    @Query("SELECT * FROM carrinho WHERE produtoId = :produtoId")
+    suspend fun buscarPorProduto(produtoId: Int): ItemCarrinho?
 }

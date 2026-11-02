@@ -1,9 +1,22 @@
 package com.example.myapplication.data.local.entity
 
 import androidx.room3.Entity
+import androidx.room3.ForeignKey
+import androidx.room3.Index
 import androidx.room3.PrimaryKey
 
-@Entity(tableName = "produtos")
+@Entity(
+    tableName = "produtos",
+    foreignKeys = [
+        ForeignKey(
+            entity = Categoria::class,
+            parentColumns = ["id"],
+            childColumns = ["categoriaId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("categoriaId")]
+)
 data class Produto(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,

@@ -23,7 +23,7 @@ interface CategoriaDAO {
     suspend fun deletarPorId(id: Int)
 
     @Query("SELECT * FROM categorias")
-    suspend fun buscarTodos(): Flow<List<Categoria>>
+    fun buscarTodos(): Flow<List<Categoria>>
 
     @Query("SELECT * FROM categorias WHERE id = :id")
     suspend fun buscarCategoriaPorId(id: Int): Categoria?

@@ -12,7 +12,7 @@ import com.example.myapplication.data.local.entity.Categoria
 import com.example.myapplication.data.local.entity.ItemCarrinho
 import com.example.myapplication.data.local.entity.Produto
 
-@Database(entities = [Categoria::class, Produto::class, ItemCarrinho::class], version = 2)
+@Database(entities = [Categoria::class, Produto::class, ItemCarrinho::class], version = 3)
 @ColumnTypeConverters(Conversores::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun produtoDAO(): ProdutoDAO

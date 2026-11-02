@@ -26,7 +26,7 @@ interface ProdutoDAO {
     suspend fun deletarPorCategoria(categoriaId: Int)
 
     @Query("SELECT * FROM produtos")
-    suspend fun buscarTodos(): Flow<List<Produto>>
+    fun buscarTodos(): Flow<List<Produto>>
 
     @Query("SELECT * FROM produtos WHERE id = :id")
     suspend fun buscarProdutoPorId(id: Int): Produto?
