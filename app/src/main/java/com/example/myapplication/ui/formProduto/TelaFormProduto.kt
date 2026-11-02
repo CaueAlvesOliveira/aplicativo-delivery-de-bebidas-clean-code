@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaFormDeProduto
+package com.example.myapplication.ui.formProduto
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,23 +27,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.R
-import com.example.myapplication.model.DadosFormProduto
+import com.example.myapplication.data.local.database.AppDatabase
+import com.example.myapplication.data.repository.CategoriaRepository
+import com.example.myapplication.data.repository.ProdutoRepository
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.TopBarTela
-import com.example.myapplication.viewmodel.LojaViewModel
 
 private val IMAGENS_DISPONIVEIS = listOf(
     R.drawable.puro_malte,
@@ -60,51 +60,24 @@ private val IMAGENS_DISPONIVEIS = listOf(
 @Composable
 fun TelaFormProduto(
     produtoId: Int,
-    viewModel: LojaViewModel,
     onVoltar: () -> Unit,
     onInicio: () -> Unit = {},
     onCarrinho: () -> Unit = {},
     onPedidos: () -> Unit = {},
-    onProdutos: () -> Unit = {}
-) {
-    val existente = viewModel.buscarProduto(produtoId)
-    val editando = existente != null
-
-    var nome by rememberSaveable { mutableStateOf(existente?.nome ?: "") }
-    var volume by rememberSaveable { mutableStateOf(existente?.volume ?: "") }
-    var estabelecimento by rememberSaveable { mutableStateOf(existente?.estabelecimento ?: "") }
-    var precoTexto by rememberSaveable {
-        mutableStateOf(existente?.let { viewModel.textoDoPreco(it.preco) } ?: "")
-    }
-    var descontoTexto by rememberSaveable { mutableStateOf(existente?.desconto ?: "") }
-    var descricao by rememberSaveable { mutableStateOf(existente?.descricao ?: "") }
-    var imagem by rememberSaveable { mutableIntStateOf(existente?.imagem ?: IMAGENS_DISPONIVEIS.first()) }
-    var categoriaId by rememberSaveable {
-        mutableIntStateOf(existente?.categoriaId ?: viewModel.categorias.firstOrNull()?.id ?: -1)
-    }
-    var tentouSalvar by rememberSaveable { mutableStateOf(false) }
-
-    val dados = DadosFormProduto(
-        nome = nome,
-        volume = volume,
-        estabelecimento = estabelecimento,
-        precoTexto = precoTexto,
-        descontoTexto = descontoTexto,
-        descricao = descricao,
-        imagem = imagem,
-        categoriaId = categoriaId
+    onProdutos: () -> Unit = {},
+    viewModel: FormProdutoViewModel = viewModel(
+        factory = FormProdutoViewModelFactory(
+            produtoId,
+            ProdutoRepository(AppDatabase.getDatabase(LocalContext.current).produtoDAO()),
+            CategoriaRepository(AppDatabase.getDatabase(LocalContext.current).categoriaDAO())
+        )
     )
-    val erros = viewModel.validarProduto(dados)
-
-    fun salvar() {
-        tentouSalvar = true
-        if (viewModel.salvarProduto(existente?.id, dados)) {
-            onVoltar()
-        }
-    }
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val erros = uiState.erros
 
     Scaffold(
-        topBar = { TopBarTela(if (editando) "Editar produto" else "Novo produto", onVoltar) },
+        topBar = { TopBarTela(if (uiState.editando) "Editar produto" else "Novo produto", onVoltar) },
         bottomBar = {
             BarraDeNavegacaoInferior(
                 selectedIndex = 3,
@@ -126,65 +99,65 @@ fun TelaFormProduto(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CampoTexto(
-                valor = nome,
-                onChange = { nome = it },
+                valor = uiState.nome,
+                onChange = { viewModel.onNomeChange(it) },
                 rotulo = "Nome",
-                erro = if (tentouSalvar) erros.nome else null
+                erro = if (uiState.tentouSalvar) erros.nome else null
             )
 
             CampoTexto(
-                valor = volume,
-                onChange = { volume = it },
+                valor = uiState.volume,
+                onChange = { viewModel.onVolumeChange(it) },
                 rotulo = "Volume (ex: 350ml)"
             )
 
             CampoTexto(
-                valor = estabelecimento,
-                onChange = { estabelecimento = it },
+                valor = uiState.estabelecimento,
+                onChange = { viewModel.onEstabelecimentoChange(it) },
                 rotulo = "Estabelecimento",
-                erro = if (tentouSalvar) erros.estabelecimento else null
+                erro = if (uiState.tentouSalvar) erros.estabelecimento else null
             )
 
             CampoTexto(
-                valor = precoTexto,
-                onChange = { precoTexto = it },
+                valor = uiState.precoTexto,
+                onChange = { viewModel.onPrecoChange(it) },
                 rotulo = "Preço (R$)",
                 teclado = KeyboardType.Decimal,
-                erro = if (tentouSalvar) erros.preco else null
+                erro = if (uiState.tentouSalvar) erros.preco else null
             )
 
             CampoTexto(
-                valor = descontoTexto,
-                onChange = { descontoTexto = viewModel.filtrarDesconto(it) },
+                valor = uiState.descontoTexto,
+                onChange = { viewModel.onDescontoChange(it) },
                 rotulo = "Desconto em % (opcional)",
                 teclado = KeyboardType.Number
             )
 
             CampoTexto(
-                valor = descricao,
-                onChange = { descricao = it },
+                valor = uiState.descricao,
+                onChange = { viewModel.onDescricaoChange(it) },
                 rotulo = "Descrição",
                 minLinhas = 3
             )
 
             Text("Categoria", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(viewModel.categorias, key = { it.id }) { categoria ->
+                items(uiState.categorias, key = { it.id }) { categoria ->
                     FilterChip(
-                        selected = categoria.id == categoriaId,
-                        onClick = { categoriaId = categoria.id },
+                        selected = categoria.id == uiState.categoriaId,
+                        onClick = { viewModel.onCategoriaChange(categoria.id) },
                         label = { Text(categoria.nome) }
                     )
                 }
             }
-            if (tentouSalvar && erros.categoria != null) {
+            if (uiState.tentouSalvar && erros.categoria != null) {
                 Text(erros.categoria, color = Color(0xFFE53935), fontSize = 12.sp)
             }
 
             Text("Imagem", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(IMAGENS_DISPONIVEIS) { recurso ->
-                    val selecionada = recurso == imagem
+                    val selecionada = recurso == uiState.imagem
                     Image(
                         painter = painterResource(id = recurso),
                         contentDescription = "Opção de imagem",
@@ -197,7 +170,7 @@ fun TelaFormProduto(
                                 color = if (selecionada) Color(0xFFFF7043) else Color.LightGray,
                                 shape = RoundedCornerShape(12.dp)
                             )
-                            .clickable { imagem = recurso }
+                            .clickable { viewModel.onImagemChange(recurso) }
                             .padding(8.dp)
                     )
                 }
@@ -206,13 +179,13 @@ fun TelaFormProduto(
             Spacer(Modifier.height(4.dp))
 
             Button(
-                onClick = { salvar() },
+                onClick = { viewModel.onSalvar { onVoltar() } },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7043))
             ) {
                 Text(
-                    text = if (editando) "Salvar alterações" else "Adicionar",
+                    text = if (uiState.editando) "Salvar alterações" else "Adicionar",
                     color = Color.Black,
                     fontWeight = FontWeight.Bold
                 )

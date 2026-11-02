@@ -1,8 +1,9 @@
-package com.example.myapplication.ui.screens.telaDoCarrinho
+package com.example.myapplication.ui.carrinho
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,30 +19,40 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.local.database.AppDatabase
 import com.example.myapplication.data.local.entity.Produto
+import com.example.myapplication.data.repository.CarrinhoRepository
+import com.example.myapplication.data.repository.ProdutoRepository
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.TopBarTela
-import com.example.myapplication.ui.screens.telaDeProduto.BotaoQuantidade
-import com.example.myapplication.viewmodel.LojaViewModel
+import com.example.myapplication.ui.produto.BotaoQuantidade
 import java.util.Locale
 
 private val CorFundo = Color(0xFFECECEC)
@@ -52,21 +63,22 @@ private val CorVerde = Color(0xFF60BF65)
 private val CorAplicar = Color(0xFF5E87B9)
 private val PaddingHorizontal = 24.dp
 
-private data class LinhaCarrinho(val produto: Produto, val quantidade: Int)
-
 @Composable
 fun TelaCarrinho(
-    viewModel: LojaViewModel,
     onVoltar: () -> Unit,
     onIrParaPagamento: () -> Unit,
     onInicio: () -> Unit = {},
     onCarrinho: () -> Unit = {},
     onPedidos: () -> Unit = {},
-    onProdutos: () -> Unit = {}
+    onProdutos: () -> Unit = {},
+    viewModel: CarrinhoViewModel = viewModel(
+        factory = CarrinhoViewModelFactory(
+            CarrinhoRepository(AppDatabase.getDatabase(LocalContext.current).carrinhoDAO()),
+            ProdutoRepository(AppDatabase.getDatabase(LocalContext.current).produtoDAO())
+        )
+    )
 ) {
-    val linhas = viewModel.carrinho.mapNotNull { item ->
-        viewModel.buscarProduto(item.produtoId)?.let { LinhaCarrinho(it, item.quantidade) }
-    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { TopBarTela("Seu carrinho", onVoltar) },
@@ -88,7 +100,7 @@ fun TelaCarrinho(
                 .padding(innerPadding)
                 .imePadding()
         ) {
-            if (linhas.isEmpty()) {
+            if (uiState.carrinho.isEmpty()) {
                 CarrinhoVazio(
                     onContinuarComprando = onVoltar,
                     modifier = Modifier.weight(1f)
@@ -99,16 +111,19 @@ fun TelaCarrinho(
                     contentPadding = PaddingValues(horizontal = PaddingHorizontal, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(linhas, key = { it.produto.id }) { linha ->
-                        ItemDoCarrinho(
-                            linha = linha,
-                            onMenos = {
-                                viewModel.alterarQuantidadeNoCarrinho(linha.produto.id, linha.quantidade - 1)
-                            },
-                            onMais = {
-                                viewModel.alterarQuantidadeNoCarrinho(linha.produto.id, linha.quantidade + 1)
-                            }
-                        )
+                    items(uiState.carrinho, key = { it.produtoId }) { item ->
+                        uiState.produtoDoItem(item)?.let { produto ->
+                            ItemDoCarrinho(
+                                produto = produto,
+                                quantidade = item.quantidade,
+                                onMenos = {
+                                    viewModel.onAlterarQuantidade(item.produtoId, item.quantidade - 1)
+                                },
+                                onMais = {
+                                    viewModel.onAlterarQuantidade(item.produtoId, item.quantidade + 1)
+                                }
+                            )
+                        }
                     }
 
                     item {
@@ -117,8 +132,8 @@ fun TelaCarrinho(
                 }
 
                 ResumoDoPedido(
-                    subtotal = viewModel.subtotalCarrinho(),
-                    taxaEntrega = viewModel.calculaValorDaEntrega(),
+                    subtotal = uiState.subtotal,
+                    taxaEntrega = uiState.taxaEntrega,
                     onIrParaPagamento = onIrParaPagamento
                 )
             }
@@ -128,12 +143,11 @@ fun TelaCarrinho(
 
 @Composable
 private fun ItemDoCarrinho(
-    linha: LinhaCarrinho,
+    produto: Produto,
+    quantidade: Int,
     onMenos: () -> Unit,
     onMais: () -> Unit
 ) {
-    val produto = linha.produto
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -174,7 +188,7 @@ private fun ItemDoCarrinho(
         }
 
         StepperQuantidade(
-            quantidade = linha.quantidade,
+            quantidade = quantidade,
             onMenos = onMenos,
             onMais = onMais
         )
@@ -194,7 +208,7 @@ private fun StepperQuantidade(
             .border(1.dp, CorBorda, RoundedCornerShape(50))
             .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
-        BotaoQuantidade(
+        BotaoQuantidadeCarrinho(
             icone = Icons.Default.Remove,
             descricao = "Diminuir quantidade",
             onClick = onMenos
@@ -207,7 +221,7 @@ private fun StepperQuantidade(
             modifier = Modifier.width(32.dp)
         )
 
-        BotaoQuantidade(
+        BotaoQuantidadeCarrinho(
             icone = Icons.Default.Add,
             descricao = "Aumentar quantidade",
             onClick = onMais
@@ -346,4 +360,23 @@ private fun CarrinhoVazio(
 
 private fun precoEmReais(valor: Double): String {
     return String.format(Locale.forLanguageTag("pt-BR"), "R$ %.2f", valor)
+}
+
+@Composable
+fun BotaoQuantidadeCarrinho(icone: ImageVector, descricao: String, onClick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(24.dp)
+            .clip(CircleShape)
+            .background(Color(0xFFD6EFFB))
+            .clickable(onClick = onClick)
+    ) {
+        Icon(
+            imageVector = icone,
+            contentDescription = descricao,
+            tint = Color.Black,
+            modifier = Modifier.size(14.dp)
+        )
+    }
 }

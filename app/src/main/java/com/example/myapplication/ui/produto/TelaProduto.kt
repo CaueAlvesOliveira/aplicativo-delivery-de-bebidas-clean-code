@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaDeProduto
+package com.example.myapplication.ui.produto
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -34,10 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,38 +53,41 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.local.entity.Produto
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.BotaoVoltar
-import com.example.myapplication.viewmodel.LojaViewModel
 import java.util.Locale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.local.database.AppDatabase
+import com.example.myapplication.data.repository.CarrinhoRepository
+import com.example.myapplication.data.repository.ProdutoRepository
 
 @Composable
 fun TelaProduto(
     produtoId: Int,
-    viewModel: LojaViewModel,
     onVoltar: () -> Unit,
     irParaCarrinho: () -> Unit,
     onInicio: () -> Unit = {},
     onCarrinho: () -> Unit = {},
     onPedidos: () -> Unit = {},
-    onProdutos: () -> Unit = {}
+    onProdutos: () -> Unit = {},
+    viewModel: ProdutoViewModel = viewModel(
+        factory = ProdutoViewModelFactory(
+            produtoId,
+            ProdutoRepository(AppDatabase.getDatabase(LocalContext.current).produtoDAO()),
+            CarrinhoRepository(AppDatabase.getDatabase(LocalContext.current).carrinhoDAO())
+        )
+    )
 ) {
-    var produto by remember { mutableStateOf<Produto?>(null) }
-    var carregou by remember { mutableStateOf(false) }
-    var quantidade by rememberSaveable { mutableIntStateOf(1) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
 
-    LaunchedEffect(produtoId) {
-        produto = viewModel.buscarProdutoPorIdNoBanco(produtoId)
-        carregou = true
-    }
-
-    if (!carregou) {
+    if (uiState.carregando) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
     }
 
-    val produtoAtual = produto
+    val produtoAtual = uiState.produto
     if (produtoAtual == null) {
         LaunchedEffect(Unit) { onVoltar() }
         return
@@ -127,17 +128,17 @@ fun TelaProduto(
                 Spacer(Modifier.height(20.dp))
 
                 SeletorQuantidade(
-                    quantidade = quantidade,
-                    onQuantidadeChange = { quantidade = it }
+                    quantidade = uiState.quantidade,
+                    onQuantidadeChange = viewModel::onQuantidadeChange
                 )
 
                 Spacer(Modifier.weight(1f))
 
                 RodapeCompra(
                     produto = produtoAtual,
-                    quantidade = quantidade,
+                    quantidade = uiState.quantidade,
                     onAdicionar = {
-                        viewModel.adicionarAoCarrinho(produtoAtual.id, quantidade)
+                        viewModel.onAdicionarAoCarrinho(uiState.quantidade)
                         Toast.makeText(contexto, "Produto adicionado ao carrinho", Toast.LENGTH_SHORT).show()
                         irParaCarrinho()
                     }

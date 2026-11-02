@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaListaDeProdutos
+package com.example.myapplication.ui.listaProdutos
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -29,9 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,12 +41,16 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.local.entity.Produto
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.TopBarTela
-import com.example.myapplication.viewmodel.LojaViewModel
 import java.util.Locale
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.local.database.AppDatabase
+import com.example.myapplication.data.repository.CategoriaRepository
+import com.example.myapplication.data.repository.ProdutoRepository
 
 @Composable
 fun TelaListaProdutos(
-    viewModel: LojaViewModel,
     onVoltar: () -> Unit,
     onNovo: () -> Unit,
     onEditar: (Int) -> Unit,
@@ -58,9 +59,14 @@ fun TelaListaProdutos(
     onPedidos: () -> Unit = {},
     onProdutos: () -> Unit = {},
     onAbrir: (Int) -> Unit,
+    viewModel: ListaProdutosViewModel = viewModel(
+        factory = ListaProdutosViewModelFactory(
+            ProdutoRepository(AppDatabase.getDatabase(LocalContext.current).produtoDAO()),
+            CategoriaRepository(AppDatabase.getDatabase(LocalContext.current).categoriaDAO())
+        )
+    )
 ) {
-
-    var produtoParaExcluir by remember { mutableStateOf<Produto?>(null) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { TopBarTela("Produtos", onVoltar) },
@@ -86,7 +92,7 @@ fun TelaListaProdutos(
         contentColor = Color.Black
     ) { innerPadding ->
 
-        if (viewModel.produtos.isEmpty()) {
+        if (uiState.produtos.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center
@@ -99,27 +105,24 @@ fun TelaListaProdutos(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(viewModel.produtos, key = { it.id }) { produto ->
+                items(uiState.produtos, key = { it.id }) { produto ->
                     CardProdutoLista(
                         produto = produto,
-                        nomeCategoria = viewModel.buscarCategoria(produto.categoriaId)?.nome,
+                        nomeCategoria = uiState.nomeCategoria(produto.categoriaId),
                         onEditar = { onEditar(produto.id) },
-                        onExcluir = { produtoParaExcluir = produto},
-                        onAbrir = {onAbrir(produto.id)},
+                        onExcluir = { viewModel.onExcluirClick(produto) },
+                        onAbrir = { onAbrir(produto.id) },
                     )
                 }
             }
         }
     }
 
-    produtoParaExcluir?.let { produto ->
+    uiState.produtoParaExcluir?.let { produto ->
         DialogExcluirProduto(
             nomeProduto = produto.nome,
-            onConfirmar = {
-                viewModel.removerProduto(produto)
-                produtoParaExcluir = null
-            },
-            onCancelar = { produtoParaExcluir = null }
+            onConfirmar = { viewModel.onConfirmarExclusao() },
+            onCancelar = { viewModel.onCancelarExclusao() }
         )
     }
 }

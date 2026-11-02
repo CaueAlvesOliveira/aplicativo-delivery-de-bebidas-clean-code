@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaDeRastreio
+package com.example.myapplication.ui.rastreio
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

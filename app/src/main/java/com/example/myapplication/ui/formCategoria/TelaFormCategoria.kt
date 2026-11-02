@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaFormDeCategoria
+package com.example.myapplication.ui.formCategoria
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,8 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,27 +29,32 @@ import androidx.compose.material.icons.outlined.WineBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.local.database.AppDatabase
 import com.example.myapplication.data.local.entity.Categoria
+import com.example.myapplication.data.repository.CategoriaRepository
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.TopBarTela
-import com.example.myapplication.ui.screens.telaDeInicio.ItemCategoria
-import com.example.myapplication.viewmodel.LojaViewModel
+import com.example.myapplication.ui.inicio.ItemCategoria
 
 private val ICONES_DISPONIVEIS = listOf(
     Icons.Outlined.SportsBar,
@@ -73,43 +79,23 @@ private val CORES_DISPONIVEIS = listOf(
 @Composable
 fun TelaFormCategoria(
     categoriaId: Int,
-    viewModel: LojaViewModel,
     onVoltar: () -> Unit,
     onInicio: () -> Unit = {},
     onCarrinho: () -> Unit = {},
     onPedidos: () -> Unit = {},
-    onProdutos: () -> Unit = {}
+    onProdutos: () -> Unit = {},
+    viewModel: FormCategoriaViewModel = viewModel(
+        factory = FormCategoriaViewModelFactory(
+            categoriaId,
+            CategoriaRepository(AppDatabase.getDatabase(LocalContext.current).categoriaDAO())
+        )
+    )
 ) {
-    val existente = viewModel.buscarCategoria(categoriaId)
-    val editando = existente != null
-
-    var nome by rememberSaveable { mutableStateOf(existente?.nome ?: "") }
-    var indiceIcone by rememberSaveable {
-        mutableIntStateOf(
-            existente?.let { ICONES_DISPONIVEIS.indexOf(it.icone) }?.coerceAtLeast(0) ?: 0
-        )
-    }
-    val icone = ICONES_DISPONIVEIS[indiceIcone]
-    var indiceCor by rememberSaveable {
-        mutableIntStateOf(
-            existente?.let { CORES_DISPONIVEIS.indexOf(it.cor) }?.coerceAtLeast(0) ?: 0
-        )
-    }
-    var tentouSalvar by rememberSaveable { mutableStateOf(false) }
-
-    val corSelecionada = CORES_DISPONIVEIS[indiceCor]
-
-    val erroNome = viewModel.validarNomeCategoria(nome)
-
-    fun salvar() {
-        tentouSalvar = true
-        if (viewModel.salvarCategoria(existente?.id, nome, icone, corSelecionada)) {
-            onVoltar()
-        }
-    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val erroNome = if (uiState.tentouSalvar) uiState.erroNome else null
 
     Scaffold(
-        topBar = { TopBarTela(if (editando) "Editar categoria" else "Nova categoria", onVoltar) },
+        topBar = { TopBarTela(if (uiState.editando) "Editar categoria" else "Nova categoria", onVoltar) },
         bottomBar = {
             BarraDeNavegacaoInferior(
                 selectedIndex = 3,
@@ -134,22 +120,22 @@ fun TelaFormCategoria(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                ItemCategoria(
+                CategoriaPrevia(
                     Categoria(
                         id = 0,
-                        nome = nome.ifBlank { "Nome" },
-                        icone = icone,
-                        cor = corSelecionada
+                        nome = uiState.nome.ifBlank { "Nome" },
+                        icone = uiState.icone,
+                        cor = uiState.cor
                     )
                 )
             }
 
             OutlinedTextField(
-                value = nome,
-                onValueChange = { nome = it },
+                value = uiState.nome,
+                onValueChange = viewModel::onNomeChange,
                 label = { Text("Nome") },
-                isError = tentouSalvar && erroNome != null,
-                supportingText = if (tentouSalvar && erroNome != null) {
+                isError = erroNome != null,
+                supportingText = if (erroNome != null) {
                     { Text(erroNome) }
                 } else null,
                 singleLine = true,
@@ -166,8 +152,8 @@ fun TelaFormCategoria(
 
             Text("Ícone", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                itemsIndexed(ICONES_DISPONIVEIS) { indice, vetor ->
-                    val selecionado = indice == indiceIcone
+                items(ICONES_DISPONIVEIS) { vetor ->
+                    val selecionado = vetor == uiState.icone
                     Box(
                         modifier = Modifier
                             .size(56.dp)
@@ -177,13 +163,13 @@ fun TelaFormCategoria(
                                 color = if (selecionado) Color(0xFFFF7043) else Color.LightGray,
                                 shape = RoundedCornerShape(12.dp)
                             )
-                            .clickable { indiceIcone = indice },
+                            .clickable { viewModel.onIconeChange(vetor) },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = vetor,
                             contentDescription = "Opção de ícone",
-                            tint = corSelecionada,
+                            tint = uiState.cor,
                             modifier = Modifier.size(28.dp)
                         )
                     }
@@ -192,8 +178,8 @@ fun TelaFormCategoria(
 
             Text("Cor", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                itemsIndexed(CORES_DISPONIVEIS) { indice, cor ->
-                    val selecionada = indice == indiceCor
+                items(CORES_DISPONIVEIS) { cor ->
+                    val selecionada = cor == uiState.cor
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -203,7 +189,7 @@ fun TelaFormCategoria(
                                 color = if (selecionada) Color.Black else Color.LightGray,
                                 shape = CircleShape
                             )
-                            .clickable { indiceCor = indice }
+                            .clickable { viewModel.onCorChange(cor) }
                     )
                 }
             }
@@ -211,13 +197,13 @@ fun TelaFormCategoria(
             Spacer(Modifier.height(4.dp))
 
             Button(
-                onClick = { salvar() },
+                onClick = { viewModel.onSalvar { onVoltar() } },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7043))
             ) {
                 Text(
-                    text = if (editando) "Salvar alterações" else "Adicionar",
+                    text = if (uiState.editando) "Salvar alterações" else "Adicionar",
                     color = Color.Black,
                     fontWeight = FontWeight.Bold
                 )
@@ -225,5 +211,51 @@ fun TelaFormCategoria(
 
             Spacer(Modifier.height(16.dp))
         }
+    }
+}
+
+@Composable
+fun CategoriaPrevia(categoria: Categoria, onClick: () -> Unit = {}) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(70.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .drawBehind(
+                ){
+                    drawCircle(
+                        color = categoria.cor,
+                        style = Stroke(
+                            width = 5.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 5f))
+                        )
+                    )
+                }
+        ) {
+            IconButton(
+                onClick = {onClick()},
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(255,255,255), shape = CircleShape)
+            ) {
+                Icon(
+                    imageVector = categoria.icone,
+                    contentDescription = "Icone categoria",
+                    tint = categoria.cor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = categoria.nome,
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            color = Color(164, 158, 160)
+        )
     }
 }

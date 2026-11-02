@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaDePagemento
+package com.example.myapplication.ui.pagamento
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,18 +42,29 @@ import androidx.navigation.NavController
 import com.example.myapplication.navegacao.rotas.Rotas
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.TopBarTela
-import com.example.myapplication.viewmodel.LojaViewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.local.database.AppDatabase
+import com.example.myapplication.data.repository.CarrinhoRepository
+import com.example.myapplication.data.repository.ProdutoRepository
 
 @Composable
 fun TelaPagamento(
     onVoltar: () -> Unit,
     navController: NavController,
-    viewModel: LojaViewModel,
     onInicio: () -> Unit = {},
     onCarrinho: () -> Unit = {},
     onPedidos: () -> Unit = {},
-    onProdutos: () -> Unit = {}
-){
+    onProdutos: () -> Unit = {},
+    viewModel: PagamentoViewModel = viewModel(
+        factory = PagamentoViewModelFactory(
+            CarrinhoRepository(AppDatabase.getDatabase(LocalContext.current).carrinhoDAO()),
+            ProdutoRepository(AppDatabase.getDatabase(LocalContext.current).produtoDAO())
+        )
+    )
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -72,7 +83,7 @@ fun TelaPagamento(
                 onProdutos = onProdutos
             )
         }
-    ){ innerPadding ->
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -81,12 +92,13 @@ fun TelaPagamento(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CardsModeloPagamento()
-            CardResumo(viewModel)
+            CardResumo(uiState)
             Spacer(modifier = Modifier.height(16.dp))
             BotaoConfirmarPagamento(
                 onConfirmar = {
-                    viewModel.limparCarrinho()
-                    navController.navigate(Rotas.RASTREIO)
+                    viewModel.onConfirmarPagamento {
+                        navController.navigate(Rotas.RASTREIO)
+                    }
                 }
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -160,14 +172,12 @@ fun CardsModeloPagamento() {
 }
 
 @Composable
-fun CardResumo(viewModel: LojaViewModel){
+fun CardResumo(uiState: PagamentoUiState){
 
-    var itemSelecionado by remember { mutableStateOf(0) }
-
-    val quantidadeItens = viewModel.calculaQuantidadeItensComprados()
-    val valorTotalProdutos = viewModel.subtotalCarrinho()
-    val valorEntrega = viewModel.calculaValorDaEntrega()
-    val valorTotal = viewModel.calculaValorTotal()
+    val quantidadeItens = uiState.quantidadeItens
+    val valorTotalProdutos = uiState.subtotal
+    val valorEntrega = uiState.taxaEntrega
+    val valorTotal = uiState.total
 
     Spacer(modifier = Modifier.width(25.dp))
     Column(

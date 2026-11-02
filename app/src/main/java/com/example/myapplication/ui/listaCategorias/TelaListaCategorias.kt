@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaListaDeCategorias
+package com.example.myapplication.ui.listaCategorias
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,9 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,11 +41,15 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.local.entity.Categoria
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.TopBarTela
-import com.example.myapplication.viewmodel.LojaViewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.local.database.AppDatabase
+import com.example.myapplication.data.repository.CategoriaRepository
+import com.example.myapplication.data.repository.ProdutoRepository
 
 @Composable
 fun TelaListaCategorias(
-    viewModel: LojaViewModel,
     onVoltar: () -> Unit,
     onNovo: () -> Unit,
     onEditar: (Int) -> Unit,
@@ -56,10 +57,15 @@ fun TelaListaCategorias(
     onInicio: () -> Unit = {},
     onCarrinho: () -> Unit = {},
     onPedidos: () -> Unit = {},
-    onProdutos: () -> Unit = {}
+    onProdutos: () -> Unit = {},
+    viewModel: ListaCategoriasViewModel = viewModel(
+        factory = ListaCategoriasViewModelFactory(
+            CategoriaRepository(AppDatabase.getDatabase(LocalContext.current).categoriaDAO()),
+            ProdutoRepository(AppDatabase.getDatabase(LocalContext.current).produtoDAO())
+        )
+    )
 ) {
-
-    var categoriaParaExcluir by remember { mutableStateOf<Categoria?>(null) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { TopBarTela("Categorias", onVoltar) },
@@ -85,7 +91,7 @@ fun TelaListaCategorias(
         contentColor = Color.Black
     ) { innerPadding ->
 
-        if (viewModel.categorias.isEmpty()) {
+        if (uiState.categorias.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center
@@ -98,28 +104,25 @@ fun TelaListaCategorias(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(viewModel.categorias, key = { it.id }) { categoria ->
+                items(uiState.categorias, key = { it.id }) { categoria ->
                     CardCategoriaLista(
                         categoria = categoria,
-                        quantidadeProdutos = viewModel.produtos.count { it.categoriaId == categoria.id },
+                        quantidadeProdutos = uiState.quantidadeProdutos(categoria.id),
                         onAbrir = { onAbrir(categoria.id) },
                         onEditar = { onEditar(categoria.id) },
-                        onExcluir = { categoriaParaExcluir = categoria }
+                        onExcluir = { viewModel.onExcluirClick(categoria) }
                     )
                 }
             }
         }
     }
 
-    categoriaParaExcluir?.let { categoria ->
+    uiState.categoriaParaExcluir?.let { categoria ->
         DialogExcluirCategoria(
             nomeCategoria = categoria.nome,
-            quantidadeProdutos = viewModel.produtos.count { it.categoriaId == categoria.id },
-            onConfirmar = {
-                viewModel.removerCategoria(categoria)
-                categoriaParaExcluir = null
-            },
-            onCancelar = { categoriaParaExcluir = null }
+            quantidadeProdutos = uiState.quantidadeProdutos(categoria.id),
+            onConfirmar = { viewModel.onConfirmarExclusao() },
+            onCancelar = { viewModel.onCancelarExclusao() }
         )
     }
 }

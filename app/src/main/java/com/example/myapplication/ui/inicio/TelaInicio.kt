@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaDeInicio
+package com.example.myapplication.ui.inicio
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -68,24 +68,38 @@ import com.example.myapplication.data.local.entity.Categoria
 import com.example.myapplication.model.ItemBarra
 import com.example.myapplication.data.local.entity.Produto
 import com.example.myapplication.navegacao.rotas.Rotas
-import com.example.myapplication.viewmodel.LojaViewModel
 import java.util.Locale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.local.database.AppDatabase
+import com.example.myapplication.data.repository.CarrinhoRepository
+import com.example.myapplication.data.repository.CategoriaRepository
+import com.example.myapplication.data.repository.ProdutoRepository
 
 @Composable
-fun telaInicio(navController: NavController, viewModel: LojaViewModel) {
-
+fun TelaInicio(
+    navController: NavController,
+    viewModel: InicioViewModel = viewModel(
+        factory = InicioViewModelFactory(
+            ProdutoRepository(AppDatabase.getDatabase(LocalContext.current).produtoDAO()),
+            CategoriaRepository(AppDatabase.getDatabase(LocalContext.current).categoriaDAO()),
+            CarrinhoRepository(AppDatabase.getDatabase(LocalContext.current).carrinhoDAO())
+        )
+    )
+) {
     val contexto = LocalContext.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         bottomBar = {
             BarraDeNavegacaoInferior(
                 onProdutos = { navController.navigate(Rotas.PRODUTOS) },
                 onCarrinho = { navController.navigate(Rotas.CARRINHO) },
-                onPedidos = {navController.navigate(Rotas.RASTREIO)}
+                onPedidos = { navController.navigate(Rotas.RASTREIO) }
             )
         },
         contentColor = Color.Black
-    ) {innerPadding ->
+    ) { innerPadding ->
 
         Surface(
             modifier = Modifier
@@ -117,7 +131,7 @@ fun telaInicio(navController: NavController, viewModel: LojaViewModel) {
                 Spacer(Modifier.height(16.dp))
 
                 ListaCategorias(
-                    categorias = viewModel.categorias,
+                    categorias = uiState.listaDeCategorias,
                     onCategoriaClick = { id -> navController.navigate(Rotas.produtosPorCategoria(id)) },
                     onGerenciar = { navController.navigate(Rotas.CATEGORIAS) }
                 )
@@ -129,10 +143,10 @@ fun telaInicio(navController: NavController, viewModel: LojaViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 ListaMaisPedidos(
-                    viewModel.produtosNormais(),
-                    onProdutoClick = {id -> navController.navigate(Rotas.produto(id))},
-                    onAdicionar = {id ->
-                        viewModel.adicionarAoCarrinho(id)
+                    uiState.produtosNormais,
+                    onProdutoClick = { id -> navController.navigate(Rotas.produto(id)) },
+                    onAdicionar = { id ->
+                        viewModel.onAdicionarAoCarrinho(id)
                         Toast.makeText(contexto, "Produto adicionado ao carrinho", Toast.LENGTH_SHORT).show()
                     }
                 )
@@ -140,17 +154,15 @@ fun telaInicio(navController: NavController, viewModel: LojaViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 ListaOfertas(
-                    viewModel.produtosOferta(),
-                    onProdutoClick = {id -> navController.navigate(Rotas.produto(id))},
-                    onAdicionar = {id ->
-                        viewModel.adicionarAoCarrinho(id)
+                    uiState.produtosOferta,
+                    onProdutoClick = { id -> navController.navigate(Rotas.produto(id)) },
+                    onAdicionar = { id ->
+                        viewModel.onAdicionarAoCarrinho(id)
                         Toast.makeText(contexto, "Produto adicionado ao carrinho", Toast.LENGTH_SHORT).show()
                     }
                 )
             }
         }
-
-
     }
 }
 

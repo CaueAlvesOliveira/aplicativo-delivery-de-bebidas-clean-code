@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.screens.telaDeProdutosPorCategoria
+package com.example.myapplication.ui.produtosPorCategoria
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,9 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,48 +35,52 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.data.local.entity.Categoria
 import com.example.myapplication.data.local.entity.Produto
 import com.example.myapplication.ui.components.BarraDeNavegacaoInferior
 import com.example.myapplication.ui.components.TopBarTela
-import com.example.myapplication.viewmodel.LojaViewModel
 import java.util.Locale
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.local.database.AppDatabase
+import com.example.myapplication.data.repository.CategoriaRepository
+import com.example.myapplication.data.repository.ProdutoRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TelaProdutoPorCategoria(
     categoriaId: Int,
-    viewModel: LojaViewModel,
     onVoltar: () -> Unit,
     onProdutoClick: (Int) -> Unit,
     onInicio: () -> Unit = {},
     onCarrinho: () -> Unit = {},
     onPedidos: () -> Unit = {},
-    onProdutos: () -> Unit = {}
+    onProdutos: () -> Unit = {},
+    viewModel: ProdutosPorCategoriaViewModel = viewModel(
+        factory = ProdutosPorCategoriaViewModelFactory(
+            categoriaId,
+            CategoriaRepository(AppDatabase.getDatabase(LocalContext.current).categoriaDAO()),
+            ProdutoRepository(AppDatabase.getDatabase(LocalContext.current).produtoDAO())
+        )
+    )
 ) {
-    var categoria by remember { mutableStateOf<Categoria?>(null) }
-    var carregou by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(categoriaId) {
-        categoria = viewModel.buscarCategoriaPorIdNoBanco(categoriaId)
-        carregou = true
-    }
-
-    if (!carregou) {
+    if (uiState.carregando) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
     }
 
-    val categoriaAtual = categoria
+    val categoriaAtual = uiState.categoria
 
     if (categoriaAtual == null) {
         LaunchedEffect(Unit) { onVoltar() }
         return
     }
 
-    val produtos = viewModel.produtos.filter { it.categoriaId == categoriaId }
+    val produtos = uiState.produtos
 
     Scaffold(
         topBar = { TopBarTela(categoriaAtual.nome, onVoltar) },
