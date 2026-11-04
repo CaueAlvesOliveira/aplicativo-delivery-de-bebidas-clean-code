@@ -2,32 +2,26 @@ package com.example.myapplication.navegacao
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.navegacao.rotas.Rotas
-import com.example.myapplication.ui.screens.telaDoCarrinho.TelaCarrinho
-import com.example.myapplication.ui.screens.telaFormDeCategoria.TelaFormCategoria
-import com.example.myapplication.ui.screens.telaFormDeProduto.TelaFormProduto
-import com.example.myapplication.ui.screens.telaListaDeCategorias.TelaListaCategorias
-import com.example.myapplication.ui.screens.telaListaDeProdutos.TelaListaProdutos
-import com.example.myapplication.ui.screens.telaDePagemento.TelaPagamento
-import com.example.myapplication.ui.screens.telaDeProduto.TelaProduto
-import com.example.myapplication.ui.screens.telaDeProdutosPorCategoria.TelaProdutoPorCategoria
-import com.example.myapplication.ui.screens.telaDeRastreio.TelaRastreio
-import com.example.myapplication.ui.screens.telaDeInicio.telaInicio
-import com.example.myapplication.viewmodel.LojaViewModel
+import com.example.myapplication.ui.carrinho.TelaCarrinho
+import com.example.myapplication.ui.formCategoria.TelaFormCategoria
+import com.example.myapplication.ui.formProduto.TelaFormProduto
+import com.example.myapplication.ui.listaCategorias.TelaListaCategorias
+import com.example.myapplication.ui.listaProdutos.TelaListaProdutos
+import com.example.myapplication.ui.pagamento.TelaPagamento
+import com.example.myapplication.ui.produto.TelaProduto
+import com.example.myapplication.ui.produtosPorCategoria.TelaProdutoPorCategoria
+import com.example.myapplication.ui.rastreio.TelaRastreio
+import com.example.myapplication.ui.inicio.TelaInicio
 
 @Composable
-fun NavagacaoEntreTela() {
+fun NavegacaoEntreTela() {
 
     val contexto = LocalContext.current
     val navInterno = rememberNavController()
-
-    val viewModel: LojaViewModel = viewModel() {
-        LojaViewModel(contexto)
-    }
 
     val navInicio = { navInterno.navigate(Rotas.HOME) }
     val navCarrinho = { navInterno.navigate(Rotas.CARRINHO) }
@@ -38,12 +32,11 @@ fun NavagacaoEntreTela() {
         navController = navInterno,
         startDestination = Rotas.HOME
     ) {
-        composable(Rotas.HOME){ telaInicio(navInterno, viewModel)}
+        composable(Rotas.HOME){ TelaInicio(navInterno)}
         composable(Rotas.PRODUTO){backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: -1
             TelaProduto(
                 produtoId = id,
-                viewModel = viewModel,
                 onVoltar = {navInterno.popBackStack()},
                 irParaCarrinho = {navInterno.navigate(Rotas.CARRINHO)},
                 onInicio = navInicio,
@@ -54,7 +47,6 @@ fun NavagacaoEntreTela() {
         }
         composable(Rotas.PRODUTOS){
             TelaListaProdutos(
-                viewModel = viewModel,
                 onVoltar = {navInterno.popBackStack()},
                 onNovo = {navInterno.navigate(Rotas.formProduto())},
                 onEditar = {id -> navInterno.navigate(Rotas.formProduto(id))},
@@ -69,7 +61,6 @@ fun NavagacaoEntreTela() {
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: -1
             TelaFormProduto(
                 produtoId = id,
-                viewModel = viewModel,
                 onVoltar = {navInterno.popBackStack()},
                 onInicio = navInicio,
                 onCarrinho = navCarrinho,
@@ -79,7 +70,6 @@ fun NavagacaoEntreTela() {
         }
         composable(Rotas.CARRINHO){
             TelaCarrinho(
-                viewModel = viewModel,
                 onVoltar = {navInterno.popBackStack()},
                 onIrParaPagamento = {navInterno.navigate(Rotas.PAGAMENTO)},
                 onInicio = navInicio,
@@ -92,7 +82,6 @@ fun NavagacaoEntreTela() {
             TelaPagamento(
                 onVoltar = {navInterno.popBackStack()},
                 navController = navInterno,
-                viewModel = viewModel,
                 onInicio = navInicio,
                 onCarrinho = navCarrinho,
                 onPedidos = navPedidos,
@@ -110,7 +99,6 @@ fun NavagacaoEntreTela() {
         }
         composable(Rotas.CATEGORIAS) {
             TelaListaCategorias(
-                viewModel = viewModel,
                 onVoltar = { navInterno.popBackStack() },
                 onNovo = { navInterno.navigate(Rotas.formCategoria()) },
                 onEditar = { id -> navInterno.navigate(Rotas.formCategoria(id)) },
@@ -125,7 +113,6 @@ fun NavagacaoEntreTela() {
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: -1
             TelaFormCategoria(
                 categoriaId = id,
-                viewModel = viewModel,
                 onVoltar = { navInterno.popBackStack() },
                 onInicio = navInicio,
                 onCarrinho = navCarrinho,
@@ -137,7 +124,6 @@ fun NavagacaoEntreTela() {
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: -1
             TelaProdutoPorCategoria(
                 categoriaId = id,
-                viewModel = viewModel,
                 onVoltar = { navInterno.popBackStack() },
                 onProdutoClick = { produtoId -> navInterno.navigate(Rotas.produto(produtoId)) },
                 onInicio = navInicio,

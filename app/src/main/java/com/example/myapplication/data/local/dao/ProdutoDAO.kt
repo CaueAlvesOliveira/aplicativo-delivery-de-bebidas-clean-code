@@ -6,6 +6,7 @@ import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.Update
 import com.example.myapplication.data.local.entity.Produto
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProdutoDAO {
@@ -25,7 +26,7 @@ interface ProdutoDAO {
     suspend fun deletarPorCategoria(categoriaId: Int)
 
     @Query("SELECT * FROM produtos")
-    suspend fun buscarProdutos(): List<Produto>
+    fun buscarTodos(): Flow<List<Produto>>
 
     @Query("SELECT * FROM produtos WHERE id = :id")
     suspend fun buscarProdutoPorId(id: Int): Produto?
