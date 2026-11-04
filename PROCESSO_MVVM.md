@@ -2,7 +2,7 @@
 
 Este é oTra balho 4 da A2, continuação direta do Trabalho 3. Não foi criada nenhuma tela, campo ou funcionalidade nova. O app faz o mesmo que fazia, mas agora está organizado em camadas: Model, Repository, ViewModel e View.
 
-VÍDEO 1 - App funcionando após a refatoração: [colar link do vídeo]
+VÍDEO 1 - App funcionando após a refatoração: https://drive.google.com/drive/folders/1lJenxbcS4dRnXmVG_xjAxCbdGYttBio3?usp=sharing
 
 ---
 
@@ -64,7 +64,7 @@ Isso foi feito nos três DAOs (ProdutoDAO, CategoriaDAO, CarrinhoDAO).
 
 O Room reemite a lista sozinho sempre que a tabela muda. Por isso a função carregarDoBanco() e o executarEAtualizar do Trabalho 3 foram removidos. Depois de inserir, atualizar ou deletar, a tela atualiza sem ninguém pedir.
 
-VÍDEO 2 - Lista atualizando sozinha:
+VÍDEO 2 - Lista atualizando sozinha: https://drive.google.com/drive/folders/16yWNHlr4kOQG4dHNX4R_eVLAeOvN20nL?usp=sharing
 
 ---
 
